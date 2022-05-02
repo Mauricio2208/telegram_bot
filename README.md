@@ -3,3 +3,6 @@
 <p>php artisan serve --port=80</p>
 <p>user: admin@gmail.com</p>
 <p>password: admin</p>
+
+<p>Adicionar no .env API_KEY=
+BOT_USERNAME=</p>
