@@ -13,7 +13,7 @@ class DatabaseSeeder extends Seeder
     {
         DB::table('users')->insert([
             'name' => 'admin',
-            'email' => 'admin@email.com',
+            'email' => 'admin@gmail.com',
             'password' => bcrypt('admin'),
         ]);
     }
