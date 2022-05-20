@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Chat;
 use App\Models\User;
+use App\Models\Message;
 use App\Models\UserChat;
+use App\Models\ChatReplicate;
+use App\Models\MessagesReplicate;
 use Longman\TelegramBot\Request;
 use App\Library\TelegramStart;
 use Illuminate\Http\Request as Req;
@@ -105,10 +108,92 @@ class ChatController extends Controller
             'chat_id' => $request->chat_id,
             'text'    => $request->message,
         ]);
-        
+
         return redirect('/home');
     }
 
+    public function getChats(Req $request) {
+        $groups = Chat::where(function($query) use ($request) {
+            $query->where('title', 'like', '%'.$request->get('query').'%')
+                ->orWhere('username', 'like', '%'.$request->get('query').'%')
+                ->orWhere('first_name', 'like', '%'.$request->get('query').'%')
+                ->orWhere('last_name', 'like', '%'.$request->get('query').'%');
+        })->where('id', '<>', $request->get('chatId'))
+        ->limit(10)->get();
 
-    
+        foreach ($groups as $key => $group) {
+            if (!$group->title) {
+                $groups[$key]->title = $group->first_name . ' ' . $group->last_name;
+            }
+        }
+
+        return $groups->toArray();
+    }
+
+    public function getChatReplicate($chatId) {
+        $groups = ChatReplicate::select('chat.*')
+            ->where('chat_replicate.to', $chatId)
+            ->join('chat', 'chat.id', 'chat_replicate.from')
+            ->get();
+
+        foreach ($groups as $key => $group) {
+            if (!$group->title) {
+                $groups[$key]->title = $group->first_name . ' ' . $group->last_name;
+            }
+        }
+
+        return $groups->toArray();
+    }
+
+    public function replicate(Req $request) {
+        ChatReplicate::where('to', $request->chat_id)->delete();
+
+        foreach ($request->chats_id as $id) {
+            ChatReplicate::create([
+                'to' => $request->chat_id,
+                'from' => $id
+            ]);
+        }
+    }
+
+    public function replicateMessages() {
+        $chatsToReplicate = ChatReplicate::get();
+
+        foreach ($chatsToReplicate as $chatReplicate) {
+            $messages = Message::where('chat_id', $chatReplicate->from)
+                ->whereNotExists(function($query) use ($chatReplicate)
+                {
+                    $query->select(\DB::raw(1))
+                        ->from('messages_replicate')
+                        ->where('chat_replicate_id', $chatReplicate->id)
+                        ->whereRaw('message.id = messages_replicate.message_id');
+                })->get();
+
+            foreach ($messages as $message) {
+                $this->sendMessageToChat((integer)$chatReplicate->to, (integer)$message->id);
+                MessagesReplicate::create([
+                    'chat_replicate_id' => $chatReplicate->id,
+                    'message_id' => $message->id
+                ]);
+            }
+        }
+    }
+
+    public function sendMessageToChat(int $chatId, int $messageId) {
+        $this->telegram->initialTelegram();
+
+        $message = Message::select('message.text', 'user.first_name', 'user.last_name')
+            ->where('message.id',$messageId)
+            ->join('user', 'user.id', 'message.user_id')
+            ->first();
+
+        if(!$message) return false;
+
+        $text = $message->first_name . ' ' . $message->last_name . ': ' . $message->text; 
+
+        Request::sendMessage([
+            'chat_id' => $chatId,
+            'text'    => $text,
+        ]);
+    }
 }

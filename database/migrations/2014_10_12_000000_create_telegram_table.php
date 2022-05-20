@@ -29,7 +29,7 @@ class CreateTelegramTable extends Migration
           
           CREATE TABLE IF NOT EXISTS `chat` (
             `id` bigint COMMENT 'Unique identifier for this chat',
-            `type` ENUM('private', 'group', 'supergroup', 'channel') NOT NULL COMMENT 'Type of chat, can be either private, group, supergroup or channel',
+            `type` ENUM('private', 'group', 'supergroup', 'channel', 'custom') NOT NULL COMMENT 'Type of chat, can be either private, group, supergroup or channel',
             `title` CHAR(255) DEFAULT '' COMMENT 'Title, for supergroups, channels and group chats',
             `username` CHAR(255) DEFAULT NULL COMMENT 'Username, for private chats, supergroups and channels if available',
             `first_name` CHAR(255) DEFAULT NULL COMMENT 'First name of the other party in a private chat',
@@ -86,7 +86,8 @@ class CreateTelegramTable extends Migration
           CREATE TABLE IF NOT EXISTS `message` (
             `chat_id` bigint COMMENT 'Unique chat identifier',
             `sender_chat_id` bigint COMMENT 'Sender of the message, sent on behalf of a chat',
-            `id` bigint UNSIGNED COMMENT 'Unique message identifier',
+            `message_id` bigint COMMENT 'Id on message telegram',
+            `id` bigint UNSIGNED AUTO_INCREMENT COMMENT 'Unique identifier for this entry',
             `user_id` bigint NULL COMMENT 'Unique user identifier',
             `date` timestamp NULL DEFAULT NULL COMMENT 'Date the message was sent in timestamp format',
             `forward_from` bigint NULL DEFAULT NULL COMMENT 'Unique user identifier, sender of the original message',
@@ -145,7 +146,7 @@ class CreateTelegramTable extends Migration
             `web_app_data` TEXT COMMENT 'Service message: data sent by a Web App',
             `reply_markup` TEXT NULL COMMENT 'Inline keyboard attached to the message',
           
-            PRIMARY KEY (`chat_id`, `id`),
+            PRIMARY KEY (`id`),
             KEY `user_id` (`user_id`),
             KEY `forward_from` (`forward_from`),
             KEY `forward_from_chat` (`forward_from_chat`),
@@ -382,6 +383,24 @@ class CreateTelegramTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('users');
+      Schema::dropIfExists('conversation');
+      Schema::dropIfExists('failed_jobs');
+      Schema::dropIfExists('messages_replicate');
+      Schema::dropIfExists('request_limiter');
+      Schema::dropIfExists('telegram_update');
+      Schema::dropIfExists('user_chat');
+      Schema::dropIfExists('callback_query');
+      Schema::dropIfExists('chat_join_request');
+      Schema::dropIfExists('chat_member_updated');
+      Schema::dropIfExists('chosen_inline_result');
+      Schema::dropIfExists('edited_message');
+      Schema::dropIfExists('inline_query');
+      Schema::dropIfExists('message');
+      Schema::dropIfExists('poll_answer');
+      Schema::dropIfExists('pre_checkout_query');
+      Schema::dropIfExists('shipping_query');
+      Schema::dropIfExists('user');
+      Schema::dropIfExists('chat');
+      Schema::dropIfExists('poll');
     }
 }

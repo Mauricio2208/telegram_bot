@@ -24,12 +24,5 @@ class TelegramStart {
         
         $server_response->getUpdates();
     }
-   
-
-
 }
-
-
-
-
 ?>

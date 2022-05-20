@@ -20,7 +20,8 @@
     <link rel="icon" href="#" type="image/x-icon">
 
     <!-- vendor css -->
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="{{asset('assets/css/style.css')}}">
+    <link rel="stylesheet" href="{{asset('assets/css/selectize.css')}}">
     
     
 
@@ -144,7 +145,6 @@
                                     <th>Grupo</th>
                                     <th>Tipo</th>
                                     <th>Ação</th>
-                                    <th>Deletar</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -185,14 +185,21 @@
                                                     Banir um usuário
                                                     </a>
                                                 </li>
+
+                                                <li class="dropdown-item close-card">
+                                                    <a type="button" href="javascript:;" onclick="openModalReplicaChat('{{$chat['id']}}')">
+                                                        Replicar conversa
+                                                    </a>
+                                                </li>
+
+                                                <li class="dropdown-item danger close-card">
+                                                    <a type="button" onclick="deleteChat(this)" id="{{$chat['id']}}">
+                                                        Deletar Grupo
+                                                    </a>
+                                                </li>
                                                 
                                             </ul>
                                         </div>
-                                    </td>
-                                    <td>
-                                        <a onclick="deleteChat(this)" id="{{$chat['id']}}" style="cursor: pointer;">
-                                        x
-                                        </a>
                                     </td>
                                 </tr>
                                 @endforeach
@@ -218,6 +225,7 @@
 <script src="{{asset('assets/js/ripple.js')}}"></script>
 <script src="{{asset('assets/js/pcoded.min.js')}}"></script>
 <script src="{{asset('assets/js/sweetalert2@11.js')}}"></script>
+<script src="{{asset('assets/js/selectize.js')}}"></script>
     
 <!-- custom-chart js -->
 
@@ -231,13 +239,14 @@
     function deleteChat(element){        
         
         Swal.fire({
-        title: 'Tem certeza?',
-        text: "Você não poderá desfazer está ação!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Sim, desejo excluir!'
+            title: 'Tem certeza?',
+            text: "Você não poderá desfazer está ação!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sim, desejo excluir!',
+            cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
 
@@ -254,24 +263,112 @@
                 });
 
                 Swal.fire(
-                'Deletado!',
-                'Grupo Apagado',
-                'success'
+                    'Deletado!',
+                    'Grupo Apagado',
+                    'success'
                 )
 
                 $(element).closest('tr').remove();
             }
         })
+    }
+    function openModalReplicaChat(chatId) {
+        setInterval(() => {
+            $("#groups").selectize({
+                valueField: "id",
+                labelField: "title",
+                searchField: "title",
+                options: [],
+                create: false,
+                preload: true,
+                render: {
+                    option: function (item, escape) {
+                        return ("<div>" + escape(item.title) + "</div>");
+                    },
+                },
+                load: function (query, callback) {
+                    $.ajax({
+                        url: "{{ action('\App\Http\Controllers\ChatController@getChats') }}",
+                        type: "GET",
+                        dataType: "json",
+                        data: {query: query, chatId: chatId},
+                        error: function () {
+                            callback();
+                        },
+                        success: function (res) {
+                            callback(res);
+                        },
+                    });
+                },
+                onInitialize: function() {
+                    var selectize = this;
 
-        
-        
+                    $.ajax({
+                    url: "/chats/chat-replicate/"+chatId,
+                    type: 'GET',
+                    success: function(data) {
+                        // res.forEach(function(existingOption) {
+                        //     self.addOption({value:existingOption.id,text:existingOption.title});
+                        //     self.addItem(13); 
+                        //     self.setValue()
+                        //     console.log(self);
+                        // });
+
+                        selectize.addOption(data); // This is will add to option
+                        var selected_items = [];
+                        $.each(data, function( i, obj) {
+                            selected_items.push(obj.id);
+                        });
+                        selectize.setValue(selected_items)
+                    }
+                    });
+                },
+            });
+        }, 100);
+        Swal.fire({
+            title: 'Selecione os grupos a copiar as mensagens',
+            html: '<select multiple="multiple" name="" id="groups"></select>',
+            icon: 'info',
+            onBeforeOpen: () => {
+                alert(156);
+            },
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Confirmar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+
+                $.ajax({
+                    type: "POST",
+                    url: "{{ action('\App\Http\Controllers\ChatController@replicate') }}",
+                    data: {
+                        "_token": "{{ csrf_token() }}",
+                        "chat_id": chatId,
+                        "chats_id": $("#groups").val()
+                    },
+                    error: function(res) {
+                        console.log(res);
+                    },
+                    success: function(res) {
+                        console.log(res);
+                    },
+                });
+
+                Swal.fire(
+                    'Concluido!',
+                    'Replica ativada',
+                    'success'
+                )
+            }
+        })
     }
     $('.ban').on('click',function(){
         $('.chat_members').empty();
         $('.loading').css('display','flex');
         $('.table-users').css('display','none');
         var chat_id = $(this).attr('id');
-        
             $.ajax({
                 type: "GET",
                 url: "{{ url('/show/') }}"+'/'+chat_id,
@@ -280,12 +377,9 @@
                     console.log(res);
                 },
                 success: function(res) {
-                    
-                    
                     res.forEach(e => {
                         
                         if(e.ban == 1){
-                            console.log(e.is_admin);
                             $('.chat_members').append(`
                             <tr>                                   
                                 <td>`+e.first_name+`</td>

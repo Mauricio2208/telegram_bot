@@ -4,10 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Chat extends Model
+class ChatReplicate extends Model
 {
 
-    protected $table = 'chat';
+    protected $table = 'chat_replicate';
 
      /**
      * The attributes that are mass assignable.
@@ -16,10 +16,7 @@ class Chat extends Model
      */
     protected $fillable = [
         'id',
-        'type',
-        'title',
-        'username',
-        'first_name',
-        'last_name'
+        'from',
+        'to'
     ];
 }

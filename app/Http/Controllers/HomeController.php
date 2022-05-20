@@ -31,7 +31,7 @@ class HomeController extends Controller
     {
         $this->telegram->initialTelegram();
         
-        $chats = Chat::where('type','!=','private')
+        $chats = Chat::whereNotIn('type', ['private', 'custom'])
             ->where('status','1')
             ->get()
             ->toArray();
@@ -41,6 +41,9 @@ class HomeController extends Controller
             $link = Request::createChatInviteLink([
                 'chat_id' => $chat['id']
             ]);
+            if (!isset($link->result) || !$link->result)
+                continue;
+
             $chats[$key]['link'] = $link->result->invite_link;
             
         }

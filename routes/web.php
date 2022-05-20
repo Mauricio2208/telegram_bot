@@ -34,4 +34,10 @@ Route::get('/delete-chat/{id}', [App\Http\Controllers\ChatController::class, 'de
 
 Route::get('/show/{id}', [App\Http\Controllers\ChatController::class, 'showMembersChat']);
 
+Route::get('/chats', [App\Http\Controllers\ChatController::class, 'getChats']);
+Route::post('/chats/replicate', [App\Http\Controllers\ChatController::class, 'replicate']);
+Route::get('/chats/chat-replicate/{chat}', [App\Http\Controllers\ChatController::class, 'getChatReplicate']);
+
+Route::get('/teste', [App\Http\Controllers\ChatController::class, 'replicateMessages']);
+
 
