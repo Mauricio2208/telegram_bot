@@ -1,3 +1,4 @@
+<p>faça uma cópia do .env.example e configure a conexão com o banco mysql</p>
 <p>composer install</p>
 <p>php artisan key:generate</p>
 <p>php artisan migrate --seed</p>
