@@ -1,3 +1,4 @@
+<p>composer install</p>
 <p>php artisan key:generate</p>
 <p>php artisan migrate --seed</p>
 <p>php artisan serve --port=80</p>
